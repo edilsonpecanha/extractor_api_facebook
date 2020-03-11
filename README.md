@@ -4,7 +4,7 @@
 
 The Marketing API has three levels: campaign, ad set
 and ad.
-Each level increases the granularity of the information that can be extracted. In this script the level of ads was used.
+Each level increases the granularity of the information that can be extracted. In this script the level of ad was used.
 
 ### Prerequisites
 You will need to install facebook-business with:
