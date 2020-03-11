@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from datetime import datetime, timedelta
-import errno
-import time
+import logging
 import json
+import time
 import pytz
-import loggingging
 
 import boto3
 import numpy as np
 import pandas as pd
+
+from datetime import datetime, timedelta
+
 from facebook_business.adobjects.adaccount import AdAccount
 from facebook_business.adobjects.adsinsights import AdsInsights
 from facebook_business.api import FacebookAdsApi
@@ -27,10 +28,10 @@ my_app_secret = kargs['my_app_secret']
 my_access_token = kargs['my_access_token']
 my_accounts = kargs['my_accounts']
 
-# Inicializa FacebookAdsApi passando o id do aplicativo, a chave secreta e o token de acesso
+# Initializes FacebookAdsApi by passing the application id, secret key and access token
 FacebookAdsApi.init(my_app_id, my_app_secret, my_access_token)
 
-# Nesse caso, a extração irá pegar o dia anterior (D -1)
+# In this case, the extraction will take the previous day (D -1)
 date_delta = datetime.now() - timedelta(days=1)
 
 date_delta_formated = date_delta.strftime('%Y-%m-%d')
@@ -40,7 +41,7 @@ filename = date_delta_formated + '_fb.csv'
 # Usado para juntar as partes extraídas
 list_dfs = []
 
-# Uma ou mais contas que podem ser extraídos
+# One or more extractable accounts
 my_accounts_json = json.loads(my_accounts)
 
 try:
@@ -54,6 +55,7 @@ try:
         for x in range(1, max_retries):
             try:
 
+                # Get insights by date and level ad
                 logging.info('Get insights ' + date_delta_formated)
                 ads = account.get_insights(
                     params={'time_range': {'since': date_delta_formated, 'until': date_delta_formated}, 'level': 'ad'},
@@ -64,25 +66,23 @@ try:
                             AdsInsights.Field.outbound_clicks,
                             AdsInsights.Field.spend])
 
-                # logging.info("Tentativa " + str(x) + " OK!")
                 break
-                # messages = []
-                # str_error = None
+
             except Exception as str_error:
                 messages.append(str_error)
-                logging.info("Aguardando 60s... ")
+                logging.info("Waiting 60s... ")
                 time.sleep(60)
             else:
                 if len(messages) > 0:
-                    logging.error("Tentativas excedidas {} {}. Conta {} ".format(str(max_retries), str(messages[0]),
-                                                                                 str(account_id)))
+                    logging.error("Attempts exceeded {} {}. Account {} ".format(str(max_retries), str(messages[0]),
+                                                                                str(account_id)))
 
                     pass
         try:
 
             if ads:
 
-                logging.info('Gerando lista')
+                logging.info('Generating list')
                 for ad in ads:
                     date = date_delta_formated
                     campaignname = ""
@@ -108,7 +108,7 @@ try:
                     if ('spend' in ad):
                         spend = ad[AdsInsights.Field.spend]
 
-                    # Cria o dataframe e adiciona na lista
+                    # Create the dataframe and add it to the list
                     fbarray = np.array([[date, campaignname, adsetname, adname, impressions, outboundclicks, spend,
                                          accountname]])
                     df_part = pd.DataFrame(data=fbarray)
@@ -118,10 +118,10 @@ try:
             logging.error(e)
             raise
 
-    logging.info('Concatenando lista')
+    logging.info('Concatenating list')
     df_final = pd.concat(list_dfs)
 
-    # Adiciona o cabeçalho e gera o arquivo csv
+    # Add the header and generate the csv file
     df_final.columns = ["date", "campaign_name", "adset_name", "ad_name", "impressions", "outbound_clicks",
                         "spend", "account_name"]
     df_final.to_csv(filename, index=False, encoding='utf-8', sep=';', header=True)
@@ -134,12 +134,12 @@ try:
 
     s3 = boto3.resource('s3')
 
-    logging.info('Escrevendo arquivo no S3')
+    logging.info('Writing file in S3')
     s3.meta.client.upload_file(filename,
                                s3_bucket,
                                complete_s3_path)
 
-    logging.info(filename + ' extraido com sucesso em {}'.format(datetime.now()))
+    logging.info(filename + ' successfully extracted in {}'.format(datetime.now()))
 
 except Exception as e:
     logging.error(e)
