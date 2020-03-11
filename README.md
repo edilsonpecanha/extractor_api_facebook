@@ -7,9 +7,12 @@ and ad.
 Each level increases the granularity of the information that can be extracted. In this script the level of ad was used.
 
 ### Prerequisites
-You will need to install facebook-business with:
+You will need to install facebook-business, pandas, numpy, boto3 with:
 ```
 pip install facebook-business
+pip install pandas
+pip install numpy
+pip install boto3
 ```
 
 You need to create an application on Facebook at https://developers.facebook.com/apps/ and add the Marketing API product.
