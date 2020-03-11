@@ -74,10 +74,9 @@ try:
                 time.sleep(60)
             else:
                 if len(messages) > 0:
-                    logging.error("Tentativas excedidas " + str(max_retries) + " " + str(messages[0]))
-                    message = {
-                        "text": '[Facebook/Extracao] ERROR! Conta {} no dia {} nao realizado! Verificar log!'.format(
-                            account_name + " " + str(account_id), datetime.now())}
+                    logging.error("Tentativas excedidas {} {}. Conta {} ".format(str(max_retries), str(messages[0]),
+                                                                                 str(account_id)))
+
                     pass
         try:
 
